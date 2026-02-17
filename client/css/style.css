@@ -1,0 +1,235 @@
+/* client/css/style.css - VERSION V83 */
+
+* { box-sizing: border-box; }
+
+body { 
+    background: #323232; color: #eee; font-family: 'Segoe UI', sans-serif; font-size: 13px; margin: 0; overflow: hidden; 
+}
+
+.container { display: flex; flex-direction: column; height: 100vh; overflow-y: auto; padding-bottom: 60px; }
+
+.header { padding: 10px; background: #262626; border-bottom: 1px solid #1a1a1a; display:flex; justify-content:space-between; flex-shrink: 0; }
+.header h2 { margin:0; color:#fff; font-size:14px; }
+.reload-btn { background:none; border:none; color:#666; cursor:pointer; font-size:16px; }
+
+.section-file { padding: 10px; background: #323232; flex-shrink: 0; }
+input[type="file"] { width: 100%; color: #fff; }
+.file-cols { display: flex; gap: 15px; align-items: flex-start; }
+.file-col-half { flex: 1; }
+.col-separator { border-left: 1px solid #444; padding-left: 15px; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 4px; }
+.input-disabled { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
+
+.section-separator {
+    background: #1f1f1f; color: #ddd; font-size: 12px; font-weight: 800; text-transform: uppercase;
+    padding: 12px 10px; letter-spacing: 1px; border-top: 1px solid #555; border-bottom: 1px solid #000;
+    margin-top: 0; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: background 0.2s; user-select: none;
+}
+.section-separator:hover { background: #333; }
+.section-separator .chevron { transition: transform 0.2s; font-size: 10px; color: #888; }
+.section-separator.collapsed .chevron { transform: rotate(-90deg); }
+
+.collapsible-content { display: block; }
+.collapsible-content.collapsed { display: none; }
+
+.raz-btn { background: #333; border: 1px solid #555; color: #aaa; font-size: 10px; padding: 2px 8px; cursor: pointer; border-radius: 2px; }
+.raz-btn:hover { background: #555; color: #fff; }
+
+.tabs { display: flex; background: #262626; flex-shrink: 0; }
+.tab-btn { flex: 1; padding: 10px; background: #2b2b2b; color: #999; border:none; border-bottom:3px solid transparent; font-weight:bold; cursor:pointer; }
+.tab-btn.active { color:#fff; border-bottom:3px solid #1473E6; background:#383838; }
+.tab-content { display:none; padding:15px; background: #323232; }
+.tab-content.active { display:block; }
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* DATAS UI */
+.filter-list { max-height: 200px; overflow-y: auto; background: #222; border: 1px solid #444; margin-bottom: 10px; }
+.filter-item { padding: 6px; border-bottom: 1px solid #333; display: flex; flex-direction: column; gap: 3px; }
+.filter-header { font-weight: bold; color: #ddd; font-size: 11px; }
+.filter-select { width: 100% !important; text-align: left !important; }
+
+/* REGLES UI UPDATED V83 */
+.rule-builder { background: #2a2a2a; padding: 8px; border: 1px solid #444; margin-bottom: 10px; }
+.rule-item { 
+    background: #222; border-left: 3px solid #1473E6; padding: 4px 6px; margin-bottom: 4px; 
+    font-size: 11px; display: flex; justify-content: space-between; align-items: center; 
+}
+.rule-desc { color: #ccc; flex-grow: 1; }
+.rule-actions { display: flex; gap: 6px; align-items: center; }
+.rule-btn { cursor: pointer; color: #888; font-weight: bold; font-size: 12px; padding: 0 2px; }
+.rule-btn:hover { color: #fff; }
+.rule-btn.delete { color: #f55; }
+.rule-btn.delete:hover { color: #f00; }
+
+.sub-tabs { display: flex; margin-bottom: 15px; background: #222; border-radius: 3px; padding: 2px; border: 1px solid #444; }
+.sub-tab-btn { flex: 1; background: transparent; border: none; color: #888; padding: 6px; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 2px; text-transform: none; }
+.sub-tab-btn.active { background: #444; color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.sub-tab-content { display: none; }
+.sub-tab-content.active { display: block; }
+
+.control-row { display:flex; justify-content:space-between; margin-bottom:8px; align-items:center; }
+input[type="text"], input[type="number"], select { background:#222; border:1px solid #444; color:#fff; padding:4px; border-radius:2px; text-align:right; width:70px; }
+.group-title { color:#d0d0d0; font-weight:bold; margin:15px 0 5px 0; border-bottom:1px solid #444; font-size: 11px; text-transform: capitalize; }
+.warning-msg { color: #ff5f5f; font-size: 11px; margin-top: 5px; background: rgba(255, 0, 0, 0.1); border: 1px solid #ff5f5f; padding: 4px; border-radius: 2px; text-align: center; }
+
+.number-wrapper { display: flex; align-items: center; margin-left: 5px; }
+.number-wrapper input[type="number"] { width: 40px; text-align: right; padding-right: 2px; margin: 0; }
+.unit-symbol { margin-left: 4px; color: #888; font-size: 10px; user-select: none; width: 15px; }
+input[type="range"] { -webkit-appearance: none; width: 80px !important; height: 4px; background: #1a1a1a; border-radius: 2px; border: 1px solid #000; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 14px; background: #b0b0b0; border: 1px solid #000; cursor: pointer; margin-top: -6px; }
+input[type="color"] { border: none; width: 25px; height: 20px; padding: 0; background: none; cursor: pointer; }
+
+.cmyk-title { font-weight: bold; font-size: 11px; color: #ddd; margin-bottom: 4px; margin-left: 1px; text-transform: capitalize; letter-spacing: 0.3px; }
+.cmyk-wrapper { background: #292929; border: 1px solid #444; padding: 8px; margin-bottom: 12px; width: max-content; border-radius: 2px; }
+.cmyk-body { display: flex; align-items: center; gap: 15px; }
+.cmyk-row { display:flex; align-items:center; }
+.cmyk-label { width:15px; font-size:10px; color:#aaa; }
+.swatch-visual { width: 25px; height: 25px; border: 1px solid #555; background-color: #000; cursor: pointer; }
+
+.col-list { margin-top: 5px; border: 1px solid #444; background: #222; max-height: 250px; overflow-y: auto; }
+.col-item { display: flex; align-items: center; padding: 3px 5px; border-bottom: 1px solid #333; background: #2a2a2a; user-select: none; transition: background 0.1s; }
+.col-item:hover { background-color: #333; }
+.col-item.ui-selected { background-color: #264a75 !important; border-color: #2680eb; }
+.col-item.dragging { opacity: 0.5; background: #000; border: 1px dashed #666; }
+.drag-handle { width: 25px; height: 25px; min-width: 25px; display: flex; align-items: center; justify-content: center; cursor: grab; font-size: 20px; color: #888; margin-right: 5px; }
+.col-name { margin-right: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; max-width: 100%; flex-grow: 1; min-width: 0; }
+.edit-icon { cursor: pointer; opacity: 0.5; margin-right: 8px; font-size: 20px; padding: 2px; color: #aaa; }
+input.col-name-input { background: #eee; color: #000; border: 1px solid #2680eb; padding: 2px 4px; font-size: 11px; font-family: sans-serif; width: 130px !important; text-align: left !important; margin-right: 10px; }
+.align-grp { display: flex; gap: 1px; margin-left: 5px; flex-shrink: 0; }
+.align-btn { width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; background: #444; color: #aaa; font-size: 10px; cursor: pointer; border: 1px solid #222; }
+.align-btn:hover { background: #555; color: #fff; }
+.align-btn.selected { background: #2680eb; color: #fff; border-color: #2680eb; }
+
+.footer { position:fixed; bottom:0; left:0; width:100%; padding:10px; background:#222; border-top:1px solid #444; z-index: 100; }
+button.action-btn { padding:10px; width:100%; border-radius:2px; border:none; color:#fff; font-weight:bold; cursor:pointer; text-transform: uppercase; }
+button.primary { background:#1473E6; }
+button.primary:hover { background:#1060c0; }
+button.action-btn:disabled { background-color: #444 !important; color: #888 !important; border: 1px solid #555; cursor: not-allowed; opacity: 0.7; }
+/* --- STYLE DES TOGGLE SWITCHES (SLIDE BUTTONS) --- */
+
+.toggle-container {
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Espace entre les deux boutons */
+}
+
+/* La ligne complète (Switch + Texte) */
+.switch-row {
+    display: flex;
+    align-items: center;
+    cursor: pointer; /* Curseur main sur toute la ligne */
+}
+
+/* Le conteneur du switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+/* Cacher la case à cocher par défaut */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Le rail du switch */
+.slider {
+    position: absolute;
+    cursor: pointer; /* Curseur main */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4a4a4a; /* Gris éteint */
+    transition: .4s;
+    border-radius: 34px; /* Forme arrondie */
+}
+
+/* La bille du switch */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+/* État Allumé (Bleu Adobe ou ta couleur accent) */
+input:checked + .slider {
+    background-color: #2680eb; 
+}
+
+/* Déplacement de la bille */
+input:checked + .slider:before {
+    transform: translateX(16px);
+}
+
+/* Le texte à côté */
+.label-text {
+    font-size: 12px;
+    color: #dcdcdc; /* Texte clair */
+    user-select: none; /* Empêche la sélection du texte */
+}
+
+/* Effet Hover pour bien montrer que c'est cliquable */
+.switch-row:hover .slider {
+    background-color: #5a5a5a;
+}
+.switch-row:hover input:checked + .slider {
+    background-color: #3790ff;
+}
+/* --- CURSEURS & INTERACTIVITÉ --- */
+
+/* 1. Tous les boutons standards et inputs cliquables */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"], 
+input[type="radio"],
+select,
+label {
+    cursor: pointer !important;
+}
+
+/* 2. Tous tes éléments d'interface personnalisés */
+.tab-btn,           /* Onglets principaux */
+.sub-tab-btn,       /* Sous-onglets */
+.action-btn,        /* Boutons Appliquer, Importer... */
+.reload-btn,        /* Bouton reload en haut */
+.raz-btn,           /* Bouton RAZ */
+.align-btn,         /* Boutons L/C/R */
+.edit-icon,         /* Crayon pour renommer */
+.rule-btn,          /* Flèches et croix dans les règles */
+.drag-handle,       /* Poignée de déplacement */
+.swatch-visual,     /* Carré de couleur */
+.slider {           /* Tes nouveaux boutons slide */
+    cursor: pointer !important;
+}
+
+/* 3. Cas particulier : Les champs désactivés ne doivent pas avoir la main */
+button:disabled,
+input:disabled,
+select:disabled,
+.input-disabled {
+    cursor: default !important;
+    opacity: 0.5;
+}
+/* Style pour bouton désactivé */
+.switch input:disabled + .slider {
+    background-color: #333 !important;
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
