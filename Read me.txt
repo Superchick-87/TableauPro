@@ -1,0 +1,13 @@
+Utilisation sur un autre poste :
+Copiez le dossier TableauPro sur le Bureau du nouveau poste.
+Copiez le fichier Installer_TableauPro.command à côté.
+Double-cliquez sur le fichier .command.
+Relancez Illustrator.
+
+Comment le rendre utilisable .command :
+Enregistrez le fichier sur votre bureau sous le nom Installer_TableauPro.command.
+
+Important : Par défaut, macOS bloque l'exécution des scripts pour des raisons de sécurité. Vous devez l'autoriser une seule fois sur le poste.
+
+Ouvrez le Terminal et tapez cette commande pour donner les droits d'exécution au fichier :
+chmod +x ~/Desktop/Installer_TableauPro.command
