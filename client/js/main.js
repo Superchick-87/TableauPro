@@ -521,12 +521,22 @@ function renderRules() {
 }
 function resetDatas() { activeSorts = {}; activeFilters = {}; activeRules = []; var rList = document.getElementById('rulesList'); if (rList) rList.innerHTML = ""; processDataRange(); updateFilterUI(); userAction(); }
 
+function safeParse(val) {
+    if (val === null || val === undefined) return NaN;
+    if (typeof val === 'number') return val;
+    // Supprime les espaces (y compris insécables), remplace la virgule par un point
+    var clean = String(val).replace(/[\s\u00A0\u202F\u2007\u2060]/g, '').replace(',', '.');
+    return parseFloat(clean);
+}
+
 function applyToIllustrator() {
     userAction();
     if (loadedData.length === 0) { alert("Aucune donnée."); return; }
+
     var fullState = gatherFullState();
     var u = fullState.uiState;
-    var act = []; if (loadedData.length > 0) { for (var i = 0; i < loadedData[0].length; i++) act.push(i); }
+    var act = [];
+    if (loadedData.length > 0) { for (var i = 0; i < loadedData[0].length; i++) act.push(i); }
 
     var finalAligns = [];
     var finalFixedW = [];
@@ -541,105 +551,78 @@ function applyToIllustrator() {
     var customStyles = { rows: {}, cells: {} };
     var finalHeaders = loadedData[0];
 
-    // Récupération des lignes visibles pour l'analyse des règles
-    var allRows = fullRawData.slice(1);
-    var filteredRows = allRows.filter(function (row) {
-        for (var colName in activeFilters) {
-            var filter = activeFilters[colName];
-            if (!filter || filter.op === 'none') continue;
-            var targetIdx = headers.indexOf(colName);
-            if (targetIdx === -1) continue;
-            var cellVal = row[targetIdx] || "";
-            var numCell = parseFloat(String(cellVal).replace(/\s/g, '').replace(',', '.').replace(/[^\d.-]/g, ''));
-            var numA = parseFloat(String(filter.val).replace(',', '.'));
-            var match = true;
-            if (filter.op === 'not_empty') { if (String(cellVal).trim() === "") match = false; }
-            else if (filter.op === '=') { if (String(cellVal).toLowerCase() !== String(filter.val).toLowerCase()) match = false; }
-            else if (filter.op === 'contains') { if (String(cellVal).toLowerCase().indexOf(String(filter.val).toLowerCase()) === -1) match = false; }
-            else if (['>', '>=', '<', '<=', 'between'].includes(filter.op)) {
-                if (isNaN(numCell)) match = false;
-                else {
-                    if (filter.op === '>') { if (!(numCell > numA)) match = false; }
-                    else if (filter.op === '>=') { if (!(numCell >= numA)) match = false; }
-                    else if (filter.op === '<') { if (!(numCell < numA)) match = false; }
-                    else if (filter.op === '<=') { if (!(numCell <= numA)) match = false; }
-                }
-            }
-            if (!match) return false;
-        }
-        return true;
-    });
-
-    var inputStart = document.getElementById('rowStart');
-    var valNbLines = document.getElementById('valNbLines');
-    var cbNbLines = document.getElementById('cbNbLines');
-    var start = (inputStart ? parseInt(inputStart.value) : 0) || 0;
-    var nbLines = (valNbLines ? parseInt(valNbLines.value) : 10) || 0;
-
-    var visibleRows = filteredRows;
-    if (start > 0) visibleRows = visibleRows.slice(Math.max(0, start - 1));
-    if (cbNbLines && cbNbLines.checked) { if (nbLines > 0) visibleRows = visibleRows.slice(0, nbLines); }
-
-    // --- APPLICATION DES REGLES ---
-    for (var r = 0; r < visibleRows.length; r++) {
-        var fullRow = visibleRows[r];
-        // Index de ligne pour Illustrator : r=0 est le header, donc r+1 est la 1ère ligne de données
-        var outputRowIdx = r + 1;
+    // On parcourt loadedData en commençant à 1 (données uniquement, 0 étant l'entête)
+    // C'est cet index 'r' qui sera utilisé par index.jsx pour dessiner
+    for (var r = 1; r < loadedData.length; r++) {
+        var rowData = loadedData[r];
 
         activeRules.forEach(function (rule) {
-            var rawColIdx = headers.indexOf(rule.colName);
-            if (rawColIdx > -1) {
-                var cellVal = fullRow[rawColIdx];
+            // Trouver l'index de la colonne dans le tableau FINAL (celui affiché)
+            var colIdxInFinal = finalHeaders.indexOf(rule.colName);
+            if (colIdxInFinal > -1) {
+                var cellVal = rowData[colIdxInFinal];
+                var numC = safeParse(cellVal);
+                var v = safeParse(rule.val);
+                var vA = safeParse(rule.valA);
+                var vB = safeParse(rule.valB);
+
                 var strVal = String(cellVal || "").trim().toLowerCase();
                 var targetStr = String(rule.val || "").trim().toLowerCase();
 
-                // Nettoyage pour comparaison numérique
-                var cleanCell = strVal.replace(/[\s\u00A0\u202F\u2007\u2060]/g, '').replace(',', '.');
-                var numC = parseFloat(cleanCell.match(/-?[\d.]+/));
-                var v = parseFloat(String(rule.val).replace(',', '.'));
-
                 var match = false;
-                if (rule.op === 'contains') { if (strVal.indexOf(targetStr) > -1) match = true; }
-                else if (rule.op === '=') { match = (!isNaN(numC) && !isNaN(v)) ? (numC === v) : (strVal === targetStr); }
+                if (rule.op === 'contains') {
+                    if (strVal.indexOf(targetStr) > -1) match = true;
+                }
+                else if (rule.op === '=') {
+                    match = (!isNaN(numC) && !isNaN(v)) ? (numC === v) : (strVal === targetStr);
+                }
                 else if (rule.op === '>') { match = numC > v; }
                 else if (rule.op === '>=') { match = numC >= v; }
                 else if (rule.op === '<') { match = numC < v; }
                 else if (rule.op === '<=') { match = numC <= v; }
+                else if (rule.op === 'between') {
+                    match = (numC >= Math.min(vA, vB) && numC <= Math.max(vA, vB));
+                }
 
                 if (match) {
                     if (rule.scope === 'row') {
-                        // On utilise String(outputRowIdx) pour garantir la clé dans le JSON
-                        customStyles.rows[String(outputRowIdx)] = { bg: rule.bg, txt: rule.txt };
+                        customStyles.rows[String(r)] = { bg: rule.bg, txt: rule.txt };
                     } else {
-                        var finalVisualIndex = finalHeaders.indexOf(rule.colName);
-                        if (finalVisualIndex > -1) {
-                            var cellKey = String(outputRowIdx) + "_" + String(finalVisualIndex);
-                            customStyles.cells[cellKey] = { bg: rule.bg, txt: rule.txt };
-                        }
+                        var cellKey = r + "_" + colIdxInFinal;
+                        customStyles.cells[cellKey] = { bg: rule.bg, txt: rule.txt };
                     }
                 }
             }
         });
     }
 
-    var safePad = Math.max(0, parseFloat(u.pad) || 0);
+    // Préparation du paquet final pour le JSX
     var p = {
-        data: loadedData, turboData: [], activeCols: act, colAligns: finalAligns,
+        data: loadedData,
+        activeCols: act,
+        colAligns: finalAligns,
         colFixedW: finalFixedW,
-        customStyles: customStyles, savedState: fullState,
+        customStyles: customStyles, // Contient maintenant les clés r_k ou r correctes
+        savedState: fullState,
         csvOptions: { legend: u.legendText },
         geo: {
-            fName: u.fName, fSize: parseFloat(u.fSize) || 10, leading: parseFloat(u.fLeading) || 12, isBold: u.isBold,
-            hHead: parseFloat(u.hHead) || 15, hRow: parseFloat(u.hRow) || 10, pad: safePad, wrapHead: u.wrapHead, maxRows: 0,
+            fName: u.fName,
+            fSize: parseFloat(u.fSize) || 10,
+            leading: parseFloat(u.fLeading) || 12,
+            isBold: u.isBold,
+            hHead: u.cbShowTitle ? (parseFloat(u.hHead) || 15) : 0,
+            hRow: parseFloat(u.hRow) || 10,
+            pad: Math.max(0, parseFloat(u.pad) || 0),
+            wrapHead: u.wrapHead,
+            maxRows: 0,
             totalTableWidth: parseFloat(u.totalTableWidth) || 0,
-            radius: { tl: parseFloat(u.radius.tl) || 0, tr: parseFloat(u.radius.tr) || 0, bl: parseFloat(u.radius.bl) || 0, br: parseFloat(u.radius.br) || 0 },
-            legRadius: { tl: parseFloat(u.legRadius.tl) || 0, tr: parseFloat(u.legRadius.tr) || 0, bl: parseFloat(u.legRadius.bl) || 0, br: parseFloat(u.legRadius.br) || 0 }
+            radius: u.radius,
+            legRadius: u.legRadius
         },
-        colors: { bgHead: getCMYK('ui-cBgHead'), txtHead: getCMYK('ui-cTxtHead'), txtCont: getCMYK('ui-cTxtCont'), bgRow1: getCMYK('ui-cBgRow1'), bgRow2: getCMYK('ui-cBgRow2'), bgLeg: getCMYK('ui-cBgLeg'), txtLeg: getCMYK('ui-cTxtLeg'), strokeHead: getCMYK('ui-cStrokeHead') },
+        colors: u.colors,
         borders: u.borders
     };
 
-    if (!u.cbShowTitle) { p.geo.hHead = 0; p.borders.head = false; }
     runJSX('creerTableau("' + toHex(JSON.stringify(p)) + '")', function () { });
 }
 

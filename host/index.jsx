@@ -325,6 +325,8 @@ var illustratorEngine = function (hexData) {
                 var align = aligns[k] || "left";
 
                 var cBg = baseRowBg;
+                // DEBUG: Force une couleur pour vérifier que le moteur de dessin fonctionne
+                // if (r === 1) { cBg = makeCMYK([0, 100, 100, 0]); }
                 var cTxt = baseRowTxt;
 
                 var cellKey = r + "_" + k;
