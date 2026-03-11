@@ -1,4 +1,4 @@
-/* host/index.jsx - VERSION V75 : LEGENDE MULTILIGNE 7PTS STRICT */
+/* host/index.jsx - VERSION V81 : CJ PARFAIT + WRAP TITRE REPARÉ */
 
 $.global.creerTableau = function (hexData) {
     illustratorEngine(hexData);
@@ -265,6 +265,7 @@ var illustratorEngine = function (hexData) {
             }
         }
 
+        // --- REAJOUT DE LA FONCTION WRAP TITRE ---
         function applyWordWrap(textString, maxWidth, isBoldText) {
             if (!textString || textString.indexOf(String.fromCharCode(13)) > -1) return textString;
             try { if (targetFont) tempText.textRange.characterAttributes.textFont = targetFont; } catch (e) { }
@@ -304,6 +305,33 @@ var illustratorEngine = function (hexData) {
         var grpTable = grp.groupItems.add();
         grpTable.name = "Contenu_Tableau";
 
+        // --- LOGIQUE DE CENTRAGE PAR COLONNE ---
+        var colMaxTextW = [];
+
+        for (var k = 0; k < cols.length; k++) {
+            var align = aligns[k] || "left";
+            var isCJ = (align.indexOf("center_fixed") !== -1);
+
+            if (isCJ) {
+                var maxTextW = 0;
+                var startR = (geo.hHead === 0) ? 0 : 1;
+                for (var r = startR; r < rowLimit; r++) {
+                    var cellTxt = (data[r] && data[r][cols[k]]) ? cleanText(data[r][cols[k]]) : "";
+                    if (cellTxt !== "") {
+                        tempText.contents = cellTxt;
+                        tempText.textRange.characterAttributes.size = geo.fSize;
+                        if (tempText.width > maxTextW) maxTextW = tempText.width;
+                    }
+                }
+                var availW = finalColWidths[k] - (geo.pad * 2);
+                if (maxTextW > availW) maxTextW = availW;
+                colMaxTextW[k] = maxTextW;
+            } else {
+                colMaxTextW[k] = 0;
+            }
+        }
+
+        // --- BOUCLE DE RENDU DES LIGNES ---
         for (var r = 0; r < rowLimit; r++) {
             var isH = (r === 0);
             if (isH && geo.hHead === 0) { continue; }
@@ -324,9 +352,10 @@ var illustratorEngine = function (hexData) {
                 var txt = (data[r] && data[r][colIdx]) ? cleanText(data[r][colIdx]) : "";
                 var align = aligns[k] || "left";
 
+                var isCJ = (align.indexOf("center_fixed") !== -1);
+                var baseAlign = align.replace("_center_fixed", "");
+
                 var cBg = baseRowBg;
-                // DEBUG: Force une couleur pour vérifier que le moteur de dessin fonctionne
-                // if (r === 1) { cBg = makeCMYK([0, 100, 100, 0]); }
                 var cTxt = baseRowTxt;
 
                 var cellKey = r + "_" + k;
@@ -338,17 +367,15 @@ var illustratorEngine = function (hexData) {
                 var rect = grpTable.pathItems.rectangle(curY, curX, w, lH);
                 rect.stroked = false; rect.filled = true; rect.fillColor = cBg;
 
+                // --- REAPPLICATION DU WRAP SUR LE TEXTE DE L'EN-TETE ---
+                if (isH && geo.wrapHead && txt !== "") {
+                    var wrapW = w - (geo.pad * 2);
+                    if (wrapW < 5) wrapW = 5;
+                    txt = applyWordWrap(txt, wrapW, geo.isBold);
+                }
+
                 if (txt !== "") {
                     try {
-                        if (isH && geo.wrapHead) {
-                            var wrapW = w - (geo.pad * 2);
-                            if (wrapW < 5) wrapW = 5;
-                            try { if (targetFont) tempText.textRange.characterAttributes.textFont = targetFont; } catch (e) { }
-                            tempText.textRange.characterAttributes.size = geo.fSize;
-                            if (geo.isBold) wrapW = wrapW * 0.95;
-                            txt = applyWordWrap(txt, wrapW, geo.isBold);
-                        }
-
                         var tf = grpTable.textFrames.add();
                         tf.contents = txt;
                         var range = tf.textRange;
@@ -358,8 +385,8 @@ var illustratorEngine = function (hexData) {
                         if (isH) {
                             pa.justification = Justification.CENTER;
                         } else {
-                            if (align === "center") pa.justification = Justification.CENTER;
-                            else if (align === "right") pa.justification = Justification.RIGHT;
+                            if (baseAlign === "center") pa.justification = Justification.CENTER;
+                            else if (baseAlign === "right") pa.justification = Justification.RIGHT;
                             else pa.justification = Justification.LEFT;
                         }
 
@@ -373,30 +400,36 @@ var illustratorEngine = function (hexData) {
 
                         var availW = w - (geo.pad * 2);
                         if (availW < 0.1) availW = 0.1;
-
                         if (tf.width > availW) {
                             var sc = (availW / tf.width) * 100;
-                            if (sc < 1) sc = 1;
-                            if (sc > 100) sc = 100;
-                            ca.horizontalScale = sc;
+                            ca.horizontalScale = (sc < 1) ? 1 : (sc > 100 ? 100 : sc);
                         }
 
-                        var tW = tf.width; var tH = tf.height;
+                        var tW = tf.width;
+                        var tH = tf.height;
                         var pX = curX + geo.pad;
 
                         if (isH) {
                             pX = curX + (w / 2) - (tW / 2);
                         }
-                        else {
-                            if (align === "right") {
-                                pX = curX + w - geo.pad - tW;
-                            }
-                            else if (align === "center") {
+                        else if (isCJ) {
+                            var maxW = colMaxTextW[k];
+                            var blockLeft = curX + (w / 2) - (maxW / 2);
+                            var blockRight = curX + (w / 2) + (maxW / 2);
+
+                            if (baseAlign === "right") {
+                                pX = blockRight - tW;
+                            } else if (baseAlign === "center") {
                                 pX = curX + (w / 2) - (tW / 2);
+                            } else {
+                                pX = blockLeft;
                             }
-                            else {
-                                pX = curX + geo.pad;
-                            }
+                        }
+                        else if (baseAlign === "center") {
+                            pX = curX + (w / 2) - (tW / 2);
+                        }
+                        else if (baseAlign === "right") {
+                            pX = curX + w - geo.pad - tW;
                         }
 
                         var pY = curY - (lH / 2) + (tH / 2);
@@ -476,7 +509,6 @@ var illustratorEngine = function (hexData) {
                 if (italicFont) { legCa.textFont = italicFont; }
                 else { try { if (targetFont) legCa.textFont = targetFont; } catch (e) { } }
 
-                // --- STYLES ET INTERLIGNAGE 7 PTS ---
                 legCa.size = 7;
                 legCa.autoLeading = false;
                 legCa.leading = 7;

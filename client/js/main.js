@@ -117,15 +117,25 @@ function generateColUI(preserveState) {
     lst.innerHTML = "";
     function isUiSelected(idx) { return selectedUiIndices.includes(idx); }
 
+    // main.js - Dans generateColUI (CORRIGÉ)
     columnOrder.forEach(function (realIndex, visualIndex) {
+        // --- BLOC CORRIGÉ DANS main.js (Fonction generateColUI) ---
         var h = headers[realIndex];
         var safe = String(h).replace(/^"|"$/g, '').trim();
+
         var isChecked = !hiddenOriginalIndices.includes(realIndex);
+        var checkAttr = isChecked ? 'checked' : '';
+
         if (!globalColAligns[safe]) globalColAligns[safe] = "left";
         var alignState = globalColAligns[safe];
+        // On vérifie si "center_fixed" est présent dans la chaîne (ex: "left_center_fixed")
+        var isCJ = alignState.indexOf("center_fixed") !== -1;
+        // On extrait la justification de base (left, center, ou right)
+        var baseAlign = alignState.replace("_center_fixed", "");
         var savedW = globalColWidths[safe] || "";
 
-        var el = document.createElement('div'); el.className = 'col-item';
+        var el = document.createElement('div');
+        el.className = 'col-item';
         if (isUiSelected(visualIndex)) el.classList.add('ui-selected');
 
         el.setAttribute('draggable', 'true');
@@ -133,43 +143,53 @@ function generateColUI(preserveState) {
         el.setAttribute('data-realidx', realIndex);
         el.setAttribute('data-colname', safe);
 
-        var checkAttr = isChecked ? 'checked' : '';
-        var clL = (alignState === 'left') ? 'selected' : '';
-        var clC = (alignState === 'center') ? 'selected' : '';
-        var clR = (alignState === 'right') ? 'selected' : '';
+        var clL = (baseAlign === 'left') ? 'selected' : '';
+        var clC = (baseAlign === 'center') ? 'selected' : '';
+        var clR = (baseAlign === 'right') ? 'selected' : '';
+        var clCJ = isCJ ? 'selected' : '';
 
         el.innerHTML = `
-    <div class="drag-handle" style="cursor:grab;">☰</div>
-    <input type="checkbox" ${checkAttr} class="col-vis-check">
-    <span class="col-name" title="${safe}" style="margin-right:5px;">${safe}</span>
-    <span class="edit-icon" title="Renommer la colonne" style="cursor:pointer; color:#888; font-size:12px; margin-right:auto;">✎</span>
-    <div class="col-width-control">
-        <input type="number" class="col-fixed-w" placeholder="Auto" value="${savedW}"
-               style="width:45px; font-size:10px; background:#1a1a1a; color:white; border:1px solid #444;"
-               data-realidx="${realIndex}">
-        <span style="font-size:9px; color:#666;">mm</span>
-    </div>
-    <div class="align-grp">
-        <div class="align-btn ${clL}" data-al="left">L</div>
-        <div class="align-btn ${clC}" data-al="center">C</div>
-        <div class="align-btn ${clR}" data-al="right">R</div>
-    </div>`;
+<div class="drag-handle" style="cursor:grab;">☰</div>
+<input type="checkbox" ${checkAttr} class="col-vis-check">
+<span class="col-name" title="${safe}" style="margin-right:5px;">${safe}</span>
+<span class="edit-icon" title="Renommer la colonne" style="cursor:pointer; color:#888; font-size:12px; margin-right:auto;">✎</span>
+<div class="col-width-control">
+    <input type="number" class="col-fixed-w" placeholder="Auto" value="${savedW}"
+           style="width:45px; font-size:10px; background:#1a1a1a; color:white; border:1px solid #444;"
+           data-realidx="${realIndex}">
+    <span style="font-size:9px; color:#666;">mm</span>
+</div>
+<div class="align-grp">
+    <div class="align-btn ${clL}" data-al="left" title="Justifier Gauche">L</div>
+    <div class="align-btn ${clC}" data-al="center" title="Justifier Centre">C</div>
+    <div class="align-btn ${clR}" data-al="right" title="Justifier Droite">R</div>
+    <div class="align-btn ${clCJ}" data-al="center_fixed" style="margin-left:5px; border-left:1px solid #555; padding-left:8px;" title="Centrer dans la colonne">CJ</div>
+</div>`;
 
-        el.addEventListener('click', function (e) {
-            if (isDragging) return;
-            if (e.target.tagName === 'INPUT' || e.target.classList.contains('align-btn') || e.target.classList.contains('edit-icon') || e.target.classList.contains('drag-handle') || e.target.tagName === 'TEXTAREA') return;
-            var currentIdx = parseInt(el.getAttribute('data-vidx'));
-            if (e.shiftKey && lastClickedIndex !== -1) {
-                var start = Math.min(lastClickedIndex, currentIdx); var end = Math.max(lastClickedIndex, currentIdx);
-                selectedUiIndices = []; for (var i = start; i <= end; i++) selectedUiIndices.push(i);
-            } else if (e.ctrlKey || e.metaKey) {
-                if (selectedUiIndices.includes(currentIdx)) selectedUiIndices = selectedUiIndices.filter(id => id !== currentIdx);
-                else selectedUiIndices.push(currentIdx);
-                lastClickedIndex = currentIdx;
-            } else {
-                selectedUiIndices = [currentIdx]; lastClickedIndex = currentIdx;
-            }
-            generateColUI(true);
+        // Gestionnaire de clic mis à jour pour gérer le cumul
+        el.querySelectorAll('.align-btn').forEach(function (b) {
+            b.onclick = function (e) {
+                e.stopPropagation();
+                var type = this.getAttribute('data-al');
+                var colName = el.getAttribute('data-colname');
+                var current = globalColAligns[colName] || "left";
+
+                if (type === "center_fixed") {
+                    // Toggle CJ : on ajoute ou on retire l'option
+                    if (current.indexOf("center_fixed") !== -1) {
+                        globalColAligns[colName] = current.replace("_center_fixed", "");
+                    } else {
+                        globalColAligns[colName] = current + "_center_fixed";
+                    }
+                } else {
+                    // Choix L, C, ou R : on garde l'option CJ si elle était là
+                    var suffix = (current.indexOf("center_fixed") !== -1) ? "_center_fixed" : "";
+                    globalColAligns[colName] = type + suffix;
+                }
+
+                userAction();
+                generateColUI(true); // Rafraîchir l'UI pour voir la sélection
+            };
         });
 
         var widthInput = el.querySelector('.col-fixed-w');
@@ -239,22 +259,29 @@ function generateColUI(preserveState) {
             };
         }
 
+        // main.js - GESTION DU CUMUL CJ + (L, C, R)
         el.querySelectorAll('.align-btn').forEach(function (b) {
             b.onclick = function (e) {
                 e.stopPropagation();
-                var newAlign = this.getAttribute('data-al');
-                var clickedVIdx = parseInt(el.getAttribute('data-vidx'));
-                var itemsToProcess = isUiSelected(clickedVIdx) ? selectedUiIndices : [clickedVIdx];
-                itemsToProcess.forEach(function (vIdx) {
-                    var domItem = lst.querySelector(`.col-item[data-vidx="${vIdx}"]`);
-                    if (domItem) {
-                        var cName = domItem.getAttribute('data-colname');
-                        globalColAligns[cName] = newAlign;
-                        domItem.querySelectorAll('.align-btn').forEach(btn => btn.classList.remove('selected'));
-                        domItem.querySelector(`.align-btn[data-al="${newAlign}"]`).classList.add('selected');
+                var type = this.getAttribute('data-al'); // 'left', 'center', 'right' ou 'center_fixed'
+                var colName = el.getAttribute('data-colname');
+                var current = globalColAligns[colName] || "left";
+
+                if (type === "center_fixed") {
+                    // TOGGLE CJ : On ajoute ou on retire l'option au texte existant
+                    if (current.indexOf("center_fixed") !== -1) {
+                        globalColAligns[colName] = current.replace("_center_fixed", "");
+                    } else {
+                        globalColAligns[colName] = current + "_center_fixed";
                     }
-                });
+                } else {
+                    // CHOIX L, C, ou R : On change la base mais on préserve le suffixe CJ s'il existe
+                    var hasCJ = (current.indexOf("center_fixed") !== -1);
+                    globalColAligns[colName] = type + (hasCJ ? "_center_fixed" : "");
+                }
+
                 userAction();
+                generateColUI(true); // Relance l'UI pour mettre à jour les classes "selected"
             };
         });
 
